@@ -10,7 +10,7 @@
 # DO_DELETE_DEPLOY=true
 # DO_CREATE_DEV=true
 # DO_DELETE_BRANCH=false
-DO_CREATE_PR=true
+# DO_CREATE_PR=true
 
 # =========================================================
 # 📦 CONFIG
@@ -18,30 +18,29 @@ DO_CREATE_PR=true
 branches=(
   # "dim"
   # "mra"
-  # "amr-new-theme"
-  # "amr-new-dev"
+  # "amr"
   # "mrf"
   # "pmr"
-  # "mir"
+  # # "mir"
 
   # "imr"
-  "tir"
-  "nrp"
-  "dmv"
-  "mdp"
-  "msr"
+  # "tir"
+  # "nrp"
+  # "dmv"
+  # "mdp"
+  # "msr"
   # "dir"
   # "vdr"
   # "rax"
   # "pmv"
   # "pri"
+
+  # "amr-new-theme"
 )
 
 commits=(
-  "1783554bd3eb8d81216ba3c7ed2e047929efe9e9"
-  "6f5aacee0d12a8f9577f9cf630d9b85d9c8f1799"
-  "d4079c838881b6873ecf4dae0f27b440535c489f"
-  "a48cdbc526afd075b021c0ac7299fdba3861d29f"
+  "6e77de41db5fd69617e4597f64e8845c707caa3a"
+  "7be216804026ac5e6fb3155a515264d1902942f6"
 )
 
 FILE_TO_DELETE=".github/workflows/deploy.yml"
@@ -145,6 +144,12 @@ create_dev_branches() {
 
 delete_branches() {
   for branch in "${branches[@]}"; do
+    # 🛡️ SAFETY CHECK: Only allow branches ending in "-dev"
+    if [[ ! "$branch" =~ -dev$ ]]; then
+      echo "🛑 SAFETY SKIP: '$branch' is not a dev branch. Deletion blocked."
+      continue
+    fi
+
     echo "🗑️ Deleting branch: $branch"
 
     current=$(git branch --show-current)
@@ -159,9 +164,6 @@ delete_branches() {
   done
 }
 
-# =========================================================
-# 🚀 CREATE PRs (dev → main)
-# =========================================================
 create_pull_requests() {
   if ! command -v gh &>/dev/null; then
     echo "❌ GitHub CLI (gh) not installed."
@@ -170,15 +172,19 @@ create_pull_requests() {
   fi
 
   for branch in "${branches[@]}"; do
-    DEV_BRANCH="${branch}-dev"
     BASE_BRANCH="$branch"
+    DEV_BRANCH="${branch}-dev"
 
     echo "🔁 Creating PR: $DEV_BRANCH → $BASE_BRANCH"
 
+    # Check dev branch exists on remote
     if ! git ls-remote --heads origin "$DEV_BRANCH" | grep -q "$DEV_BRANCH"; then
       echo "⚠️ Dev branch $DEV_BRANCH does not exist. Skipping."
       continue
     fi
+
+    # Fetch latest refs
+    git fetch origin "$BASE_BRANCH" "$DEV_BRANCH"
 
     # Check if PR already exists
     if gh pr list --head "$DEV_BRANCH" --base "$BASE_BRANCH" --json number | grep -q number; then
@@ -186,16 +192,26 @@ create_pull_requests() {
       continue
     fi
 
+    # 🔹 Generate PR body from commit messages
+    PR_BODY=$(git log "origin/$BASE_BRANCH..origin/$DEV_BRANCH" \
+      --pretty=format:"- %s (%an)" )
+
+    if [ -z "$PR_BODY" ]; then
+      echo "⚠️ No commits found between $DEV_BRANCH and $BASE_BRANCH. Skipping."
+      continue
+    fi
+
     gh pr create \
       --base "$BASE_BRANCH" \
       --head "$DEV_BRANCH" \
       --title "$BASE_BRANCH ⬅️ $DEV_BRANCH" \
-      --body "$PR_BODY" \
-      --draft
+      --body "$PR_BODY"
+      # --draft
 
     echo "✅ PR created: $DEV_BRANCH → $BASE_BRANCH"
   done
 }
+
 
 
 # =========================================================
