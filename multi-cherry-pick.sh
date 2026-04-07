@@ -6,6 +6,7 @@
 # 👉 Set ONLY ONE to true at a time
 # =========================================================
 # DO_PULL=true
+# DO_PULL_FROM_BASE=true
 # DO_CHERRY_PICK=true
 # DO_DELETE_DEPLOY=true
 # DO_CREATE_DEV=true
@@ -16,31 +17,30 @@
 # 📦 CONFIG
 # =========================================================
 branches=(
-  # "dim"
-  # "mra"
-  # "amr"
-  # "mrf"
-  # "pmr"
-  # # "mir"
+  # "dim-dev"
+  # "mra-dev"
+  # "amr-dev"
+  # "mrf-dev"
+  # "pmr-dev"
+  # "mir-dev"
 
-  # "imr"
-  # "tir"
-  # "nrp"
-  # "dmv"
-  # "mdp"
-  # "msr"
-  # "dir"
-  # "vdr"
-  # "rax"
-  # "pmv"
-  # "pri"
+  # "imr-dev"
+  # "tir-dev"
+  # "nrp-dev"
+  # "dmv-dev"
+  # "mdp-dev"
+  # "msr-dev"
+  # "dir-dev"
+  # "vdr-dev"
+  # "rax-dev"
+  # "pmv-dev"
+  # "pri-dev"
 
   # "amr-new-theme"
 )
 
 commits=(
-  "6e77de41db5fd69617e4597f64e8845c707caa3a"
-  "7be216804026ac5e6fb3155a515264d1902942f6"
+  "0d50c95e16693c470d7f2806be36129d531f43e2"
 )
 
 FILE_TO_DELETE=".github/workflows/deploy.yml"
@@ -57,12 +57,13 @@ PR_BODY="Home, RD page optimized and sitemap updated"
 enabled=0
 
 [ "$DO_PULL" = true ] && ((enabled++))
+[ "$DO_PULL_FROM_BASE" = true ] && ((enabled++))
 [ "$DO_CHERRY_PICK" = true ] && ((enabled++))
 [ "$DO_DELETE_DEPLOY" = true ] && ((enabled++))
 [ "$DO_CREATE_DEV" = true ] && ((enabled++))
 [ "$DO_DELETE_BRANCH" = true ] && ((enabled++))
 [ "$DO_CREATE_PR" = true ] && ((enabled++))
-
+ 
 if (( enabled == 0 )); then
   echo "❌ No operation selected. Set one DO_* flag to true."
   exit 1
@@ -82,7 +83,23 @@ pull_branches() {
   for branch in "${branches[@]}"; do
     echo "📥 Pulling latest for: $branch"
     git checkout "$branch"
+    git pull
+  done
+}
+
+pull_from_base() {
+  for branch in "${branches[@]}"; do
+    BASE_BRANCH="${branch%-dev}" # Extract base branch name (e.g., dim from dim-dev)
+
+    echo "📥 Pulling latest for: $branch"
+    git checkout "$branch"
     git pull origin "$branch"
+
+    echo "🔄 Pulling changes from base branch: $BASE_BRANCH into $branch"
+    git pull origin "$BASE_BRANCH"
+
+    echo "📤 Pushing updated $branch back to remote"
+    git push origin "$branch"
   done
 }
 
@@ -218,6 +235,7 @@ create_pull_requests() {
 # 🚦 EXECUTION
 # =========================================================
 [ "$DO_PULL" = true ] && pull_branches
+[ "$DO_PULL_FROM_BASE" = true ] && pull_from_base
 [ "$DO_CHERRY_PICK" = true ] && cherry_pick_commits
 [ "$DO_DELETE_DEPLOY" = true ] && delete_deploy_file
 [ "$DO_CREATE_DEV" = true ] && create_dev_branches
