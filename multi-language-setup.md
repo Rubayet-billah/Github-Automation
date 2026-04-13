@@ -1,4 +1,4 @@
-# Multilingual Feature Replication Checklist
+# Multilingual Feature Replication Checklist 
 
 **Target Publisher:** Archive Market Research  
 **Source Publisher:** Previous Project  
