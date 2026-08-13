@@ -9,7 +9,9 @@ Quick guide to schedule a 60-minute shutdown without permanently changing the 10
 
 cmd
 
+```
 shutdown -s -t 3600
+```
 
 Use code with caution. 3. A Windows notification will confirm the scheduled shutdown.
 
@@ -22,7 +24,9 @@ If you need to stop the countdown before the 60 minutes are up: 
 
 cmd
 
+```
 shutdown -a
+```
 
 Use code with caution.
 
